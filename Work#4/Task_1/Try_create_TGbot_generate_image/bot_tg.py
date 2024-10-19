@@ -72,18 +72,27 @@ async def process_prompt(message: Message, state: FSMContext) -> None:
     prompt = message.text
     await state.clear()
     await message.answer(f'Stay by please, loading {preset}, {prompt}')
-    result_url = start(prompt, preset)
-    if result_url: 
-        img = URLInputFile(result_url)
-        await message.answer_photo(photo=img)
+    try:
+        result_url = start(prompt, preset)
+        if result_url: 
+            img = URLInputFile(result_url)
+            await message.answer_photo(photo=img)
+    except Exception as e:
+        await message.answer(f'Error...!: {str(e)}')
 
 # Определение обработчика сообщений echo_handler, который принимает сообщение и отправляет его обратно в чат
 @dp.message()
-async def echo_handler(message: Message) -> None:
-    try:
-        await message.send_copy(chat_id=message.chat.id)
-    except TypeError:
-        await message.answer("Nice try!")
+async def echo_handler(message: Message, state: FSMContext) -> None:
+    if message.text.lower() in ['/start', '/image', '/help']:
+        if message.text.lower() == '/help':
+            await message.answer("Available commands:\n/start - greeting\n/image - choose image processing style\n/help - get list of commands")
+        elif message.text.lower() == '/start':
+            await message.answer(f"Hello, {message.from_user.first_name}!")
+        elif message.text.lower() == '/image':
+            await message.answer(f"Choose style preset:", reply_markup=get_style_keyboard())
+            await state.set_state(Form.style_presets)
+    else:
+        await message.answer("Invalid command.")
 
 # Основная функция, запускающая бота и начинающая опрос сообщений
 async def main() -> None:
