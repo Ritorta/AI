@@ -11,13 +11,13 @@ key_ai = config.key_ai
 
 logging.basicConfig(level=logging.INFO)
 
-def get_job(prompt):
+def get_job(prompt, preset):
     url = "https://api.prodia.com/v1/sd/generate"
 
     payload = {
         "prompt": prompt,
         "upscale": True,
-        "style_preset": "anime"
+        "style_preset": f"{preset}"
     }
 
     headers = {
@@ -65,9 +65,18 @@ def get_image_url(job):
     return url, status
 
 def save_url(url, file_path):
-    if os.path.exists(file_path):
-        logging.info('Image file already exists. Skipping download.')
-        return
+
+    dir_image = os.path.join(os.path.dirname(__file__), 'folder_for_ai_image')
+    os.makedirs(dir_image, exist_ok=True)
+
+    base_name, ext = os.path.splitext(file_path)
+    i = 1
+
+    while True:
+        full_file_path = os.path.join(dir_image, f"{base_name}_{i}{ext}")
+        if not os.path.exists(full_file_path):
+            break
+        i += 1
 
     try:
         response = requests.get(url, stream=True)
@@ -79,15 +88,16 @@ def save_url(url, file_path):
         logging.error(f'Other error occurred: {err}')
         return
 
-    with open(file_path, 'wb') as sv:
+    with open(full_file_path, 'wb') as sv:
         for block in response.iter_content(1024):
             if not block:
                 break
             sv.write(block)
-    logging.info('Image saved as image.png')
+    logging.info(f'Image saved as {file_path}')
 
-def main(prompt):
-    token_name = get_job(prompt)
+
+def start(prompt, preset):
+    token_name = get_job(prompt, preset)
     if not token_name:
         logging.error('Failed to create job.')
         return
@@ -100,11 +110,14 @@ def main(prompt):
         time.sleep(10)
 
     if status == status_s:
-        file_path = os.path.join(os.path.dirname(__file__), 'image.png')
+        file_path = f'{prompt}.png'
         print(url)
         save_url(url, file_path)
     else:
         logging.error(f'Error: {status}')
 
+    return url
+
+
 if __name__ == '__main__':
-    main('pony')
+    start('pony', 'name_preset')

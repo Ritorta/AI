@@ -2,13 +2,6 @@ import asyncio
 import logging
 import sys
 from os import getenv
-import importlib.util
-
-spec = importlib.util.spec_from_file_location("config", "C:/Users/Esdesu/Documents/Материалы по обучению/Обучение Ai/Folder_confing/config.py")
-config = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(config)
-
-key_t = config.key_t
 
 from aiogram import Bot, Dispatcher, html
 from aiogram.client.default import DefaultBotProperties
@@ -16,7 +9,15 @@ from aiogram.enums import ParseMode
 from aiogram.filters import CommandStart, Command
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.fsm.context import FSMContext
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, URLInputFile
+from loader_image import start
+
+import importlib.util
+
+spec = importlib.util.spec_from_file_location("config", "C:/Users/Esdesu/Documents/Материалы по обучению/Обучение Ai/Folder_confing/config.py")
+config = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(config)
+key_t = config.key_t
 
 # Bot token can be obtained via https://t.me/BotFather
 TOKEN = key_t
@@ -36,20 +37,24 @@ def get_style_keyboard():
     keyboard = ReplyKeyboardMarkup(keyboard=[buttons])
     return keyboard
 
+
 @dp.message(CommandStart())
 async def command_start_handler(message: Message) -> None:
     await message.answer(f"Hello, {message.from_user.first_name}!")
+
 
 @dp.message(Command('image'))
 async def command_image_handler(message: Message, state: FSMContext) -> None:
     await message.answer(f"Chose style preset:", reply_markup=get_style_keyboard())
     await state.set_state(Form.style_presets)
 
+
 @dp.message(Form.style_presets)
 async def process_presets(message: Message, state: FSMContext) -> None:
     await state.update_data(style_presets=message.text)
     await state.set_state(Form.prompt)
     await message.answer('Input prompt')
+
 
 @dp.message(Form.prompt)
 async def process_prompt(message: Message, state: FSMContext) -> None:
@@ -58,6 +63,10 @@ async def process_prompt(message: Message, state: FSMContext) -> None:
     prompt = message.text
     await state.clear()
     await message.answer(f'Stay by please, loading {preset}, {prompt}')
+    result_url = start(prompt, preset)
+    if result_url: 
+        img = URLInputFile(result_url)
+        await message.answer_photo(photo=img)
 
 
 @dp.message()
@@ -66,6 +75,7 @@ async def echo_handler(message: Message) -> None:
         await message.send_copy(chat_id=message.chat.id)
     except TypeError:
         await message.answer("Nice try!")
+
 
 async def main() -> None:
     bot = Bot(token=TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
