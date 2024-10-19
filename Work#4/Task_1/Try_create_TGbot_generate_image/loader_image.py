@@ -1,9 +1,13 @@
 import os
 import time
 import requests
-from config import key_ai
-import json
 import logging
+import importlib.util
+
+spec = importlib.util.spec_from_file_location("config", "C:/Users/Esdesu/Documents/Материалы по обучению/Обучение Ai/Folder_confing/config.py")
+config = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(config)
+key_ai = config.key_ai
 
 logging.basicConfig(level=logging.INFO)
 

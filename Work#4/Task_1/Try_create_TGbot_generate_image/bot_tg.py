@@ -2,7 +2,13 @@ import asyncio
 import logging
 import sys
 from os import getenv
-from config import key_t
+import importlib.util
+
+spec = importlib.util.spec_from_file_location("config", "C:/Users/Esdesu/Documents/Материалы по обучению/Обучение Ai/Folder_confing/config.py")
+config = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(config)
+
+key_t = config.key_t
 
 from aiogram import Bot, Dispatcher, html
 from aiogram.client.default import DefaultBotProperties
