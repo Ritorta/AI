@@ -150,6 +150,6 @@ def start(prompt, preset):
 
     return url
 
-
+# Запуск основной функции при запуске скрипта
 if __name__ == '__main__':
     start('pony', 'name_preset')
